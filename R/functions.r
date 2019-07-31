@@ -65,3 +65,74 @@ makeFits<-list('combElf'=survfit(Surv(newOS_MONTHS,newcoded_status) ~ binnedElf5
 	print(plot_grid(top,bottom,ncol=1))
 	return(invisible(comDF))
 }
+
+
+
+#' intgraph
+#'
+#' takes a summarized cellphoneDB object and plots it better than my other attempts
+#'
+#' @param interactionData a dataframe with source target and countAboveMean[numeric]
+#' @param annotation a dataframe of fields name, type, ID, count, optional x+y coordinates for manual graph layout
+#' @param scoreCut a numeric value pointing to a column of interactionData (default 0.3)
+#' @param numberCut numeric value for minimum number of interactions to plot (default 20)
+#' @param numberSplit numeric value for spliting numbers of interactions (i.e high vs low, default 60)
+#'
+#' @return a plot, invisibly the graph
+#'
+#' @examples
+#' data("190801_newNetworkGraph.rdata")
+#' IG<-intgraph(interactionData=cellphoneDB_data,annotation=cluster_anno,scoreCut=0.3, numberCut=20, numberSplit=60)
+#' 
+#' 
+#' @export
+intgraph<- function(interactionData,annotation,scoreCut=0.3, numberCut=20, numberSplit=60){
+   require(ggraph)
+   require(dplyr)
+   require(igraph)
+   require(cowplot)
+   message("use like this: intgraph(scoreCut=0.3, numberCut=0, numberSplit=35)")
+ tmp<-cellphoneDB_data[cellphoneDB_data[,paste0("countAboveMean",scoreCut)]>numberCut,c('source','target',paste0("countAboveMean",scoreCut))]
+ colnames(tmp)[3]<-"score"
+ gr<-graph_from_data_frame(tmp,directed = F,vertices=cluster_anno)
+ deg=degree(gr, mode ="all")
+ colname<-paste0("countAboveMean",numberCut)
+   p1<-ggraph(gr, layout = 'linear', circular=T) +     geom_edge_arc(aes(width =score,alpha=score>numberSplit,colour=score>numberSplit)) + geom_node_point(aes(color=paste(name,ID),shape=type,size=count)) + geom_node_text(aes(label=paste(name,ID)), repel=F) + ggtitle(paste0("scoreCut=",scoreCut, ", numberCut=",numberCut,", numberSplit=",numberSplit))
+   p2<-ggplot(tmp,aes(x=score,colour=score<numberSplit)) + geom_bar() + ggtitle("score dist")
+  print( ggdraw() + draw_plot(p1 + theme(legend.justification="bottom"), 0,0,1,1) + draw_plot(p2  + theme(legend.position = "none") ,.85, 0, 0.15  , 0.15))
+   return(invisible(gr))
+   }
+
+
+#' TSNEintgraph needs to be tested
+#'
+#' building on intgraph, adds network to a TSNE plor
+#'
+#' @param intGraph an output from intgraph
+#' @param seuratObj a Seurat object
+#' @param metaCol character, name of metadata column corresponding to nodes of intGraph
+#' @param metaColPlot name of metadata column corresponding to nodes of intGraph if different from metaCol, default NULL
+#' @param numberCut numeric value for minimum number of interactions to plot (default 20)
+#' @param numberSplit numeric value for spliting numbers of interactions (i.e high vs low, default 60)
+#'
+#' @return a plot 
+#'
+#' @examples
+#' data("190801_newNetworkGraph.rdata")
+#' IG<-intgraph(interactionData=cellphoneDB_data,annotation=cluster_anno,scoreCut=0.3, numberCut=20, numberSplit=60)
+#' load("PATH/TO/SEURAT/OBJ) 
+#' TSNEintgraph(intGraph=IG,seuratObj=TA,metaCol="cellphoneDB_id",metaColPlot="cellphoneDB_id",numberCut=20,numberSplit=60)
+#' 
+#' 
+#' @export
+TSNEintgraph<-function(intGraph,seuratObj,metaCol,metaColPlot=NULL,numberCut,numberSplit){
+     locs<-data.frame(do.call(rbind,lapply(split(data.frame(seuratObj@dr$tsne@cell.embeddings),seuratObj@meta.data[,metaCol]),colMeans)))
+     colnames(locs)<-c('x','y')
+     newAnno<-cbind(locs,as.data.frame(get.vertex.attribute(intGraph)))
+p1<- ggraph(intGraph,layout = 'manual',node.position=newAnno) +     geom_edge_arc(aes(width =score,alpha=score>numberSplit,colour=score)) + geom_node_point(aes(shape=type,size=count)) + geom_node_text(aes(label=paste(name,ID)), repel=T,size=6) + theme(legend.position = "none") + xlim(-50, 50) + ylim(-50, 50) 
+
+if(is.null(metaColPlot)) { p2<-ggplot(cbind(seuratObj@meta.data,seuratObj@dr$tsne@cell.embeddings),aes(x=tSNE_1,y=tSNE_2,colour=get(metaCol))) + geom_point() + theme(legend.position = "none") + xlim(-50, 50) + ylim(-50, 50) } else { p2<-ggplot(cbind(seuratObj@meta.data,seuratObj@dr$tsne@cell.embeddings),aes(x=tSNE_1,y=tSNE_2,colour=get(metaColPlot))) + geom_point() + theme(legend.position = "none") + xlim(-50, 50) + ylim(-50, 50) }
+
+print(ggdraw() + draw_plot(p2 + theme(legend.position = "none"),0,0,1,1) + draw_plot(p1,0,0,1,1))
+
+}
