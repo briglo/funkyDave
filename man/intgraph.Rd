@@ -25,7 +25,7 @@ a plot, invisibly the graph
 takes a summarized cellphoneDB object and plots it better than my other attempts
 }
 \examples{
-data("190801_newNetworkGraph.rdata")
+data("190801_newNetworkGraph")
 IG<-intgraph(interactionData=cellphoneDB_data,annotation=cluster_anno,scoreCut=0.3, numberCut=20, numberSplit=60)
 
 

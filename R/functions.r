@@ -81,7 +81,7 @@ makeFits<-list('combElf'=survfit(Surv(newOS_MONTHS,newcoded_status) ~ binnedElf5
 #' @return a plot, invisibly the graph
 #'
 #' @examples
-#' data("190801_newNetworkGraph.rdata")
+#' data("190801_newNetworkGraph")
 #' IG<-intgraph(interactionData=cellphoneDB_data,annotation=cluster_anno,scoreCut=0.3, numberCut=20, numberSplit=60)
 #' 
 #' 
@@ -92,9 +92,9 @@ intgraph<- function(interactionData,annotation,scoreCut=0.3, numberCut=20, numbe
    require(igraph)
    require(cowplot)
    message("use like this: intgraph(scoreCut=0.3, numberCut=0, numberSplit=35)")
- tmp<-cellphoneDB_data[cellphoneDB_data[,paste0("countAboveMean",scoreCut)]>numberCut,c('source','target',paste0("countAboveMean",scoreCut))]
+ tmp<-cellphoneDB_data[interactionData[,paste0("countAboveMean",scoreCut)]>numberCut,c('source','target',paste0("countAboveMean",scoreCut))]
  colnames(tmp)[3]<-"score"
- gr<-graph_from_data_frame(tmp,directed = F,vertices=cluster_anno)
+ gr<-graph_from_data_frame(tmp,directed = F,vertices=annotation)
  deg=degree(gr, mode ="all")
  colname<-paste0("countAboveMean",numberCut)
    p1<-ggraph(gr, layout = 'linear', circular=T) +     geom_edge_arc(aes(width =score,alpha=score>numberSplit,colour=score>numberSplit)) + geom_node_point(aes(color=paste(name,ID),shape=type,size=count)) + geom_node_text(aes(label=paste(name,ID)), repel=F) + ggtitle(paste0("scoreCut=",scoreCut, ", numberCut=",numberCut,", numberSplit=",numberSplit))
@@ -121,7 +121,7 @@ intgraph<- function(interactionData,annotation,scoreCut=0.3, numberCut=20, numbe
 #' data("190801_newNetworkGraph.rdata")
 #' IG<-intgraph(interactionData=cellphoneDB_data,annotation=cluster_anno,scoreCut=0.3, numberCut=20, numberSplit=60)
 #' load("PATH/TO/SEURAT/OBJ) 
-#' TSNEintgraph(intGraph=IG,seuratObj=TA,metaCol="cellphoneDB_id",metaColPlot="cellphoneDB_id",numberCut=20,numberSplit=60)
+#' TSNEintgraph(intGraph=IG,seuratObj=TA,metaCol="cellphoneDB_id",metaColPlot="cellphoneDB_comb",numberCut=20,numberSplit=60)
 #' 
 #' 
 #' @export
