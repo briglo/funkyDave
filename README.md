@@ -8,7 +8,7 @@ github_install("https://github.com/briglo/funkyDave.git")
 load('r_objects/181128_survivalObjects.rdata')
 plotSurv(genes=sample(rownames(cdat),25),expdat=cdat,df=clindat)
 ```
-having issues with below (what is the subtype column in tcga?)
+having issues with below (what is the subtype column in tcga?)- thiss will get resolved next time
 
 ## getting plotSurv objects
 ```R
